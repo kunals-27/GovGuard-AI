@@ -13,3 +13,4 @@ class Claim(Base):
     content = Column(Text, nullable=True)
     published_at = Column(DateTime)
     similarity_score = Column(Float, nullable=True)
+    summary = Column(Text, nullable=True)

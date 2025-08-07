@@ -12,8 +12,18 @@ celery_app = Celery(
     "tasks",
     broker=redis_url,
     backend=redis_url,
-    include=["app.tasks.nlp_tasks"]  # Point to our future tasks file
+    include=[
+        "app.tasks.nlp_tasks",
+        "app.tasks.ingestion_tasks"
+    ]  # Point to our future tasks file
 )
+
+celery_app.conf.beat_schedule={
+    'fetch-articles-every-hour':{
+        'task': 'app.tasks.ingestion_tasks.fetch_and_store_articles_task',
+        'schedule': 60.0,  # Every hour
+    },
+}
 
 celery_app.conf.update(
     task_track_started=True,

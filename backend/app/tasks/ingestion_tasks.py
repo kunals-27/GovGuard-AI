@@ -1,24 +1,21 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
+# in backend/app/tasks/ingestion_tasks.py
+from celery_worker import celery_app
+from app.db.session import SessionLocal
+from app.db import models
+from .nlp_tasks import analyze_claim_task
 import requests
 import os
 from datetime import datetime
 
-from .tasks.nlp_tasks import analyze_claim_task 
-from .db import models, session
-
-models.Base.metadata.create_all(bind=session.engine)
-
-app = FastAPI(title="GovGuardAI API")
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the GovGuardAI API!"}
-
-@app.post("/ingest/")
-def ingest_data(db: Session = Depends(session.get_db)):
+@celery_app.task
+def fetch_and_store_articles_task():
+    """
+    A scheduled task to fetch new articles from GNews, store them,
+    and trigger analysis tasks.
+    """
     api_key = os.getenv("GNEWS_API_KEY")
     url = f"https://gnews.io/api/v4/search?q=government&lang=en&max=10&apikey={api_key}"
+    db = SessionLocal()
 
     try:
         response = requests.get(url)
@@ -37,17 +34,19 @@ def ingest_data(db: Session = Depends(session.get_db)):
                     published_at=datetime.fromisoformat(article["publishedAt"].replace("Z", "+00:00"))
                 )
                 db.add(claim)
-                db.flush() 
-                # Store the whole object briefly so we can get its data after
+                db.flush()
                 new_claims_to_analyze.append(claim)
 
         db.commit()
 
-        # Now, trigger the background task with the required data
         for claim in new_claims_to_analyze:
             analyze_claim_task.delay(claim.id, claim.title, claim.content)
 
-        return {"message": f"Successfully ingested {len(new_claims_to_analyze)} new articles. Analysis is running in the background."}
+        return f"Ingestion task complete. Found and stored {len(new_claims_to_analyze)} new articles."
 
-    except requests.exceptions.RequestException as e:
-        return {"error": f"Failed to fetch data from GNews: {e}"}
+    except Exception as e:
+        db.rollback()
+        return f"An error occurred: {e}"
+
+    finally:
+        db.close()
