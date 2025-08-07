@@ -16,6 +16,8 @@ def analyze_claim_task(claim_id: int, title: str, content: str):
         known_fact = "The government announced new infrastructure projects today."
         score = analysis.calculate_similarity(title, known_fact)
         summary = analysis.generate_summary(content)
+        nli_result = analysis.detect_contradiction(premise=known_fact, hypothesis=title)
+
 
         # Now, find the claim in the DB using the ID
         claim_to_update = db.query(models.Claim).filter(models.Claim.id == claim_id).first()
@@ -24,6 +26,8 @@ def analyze_claim_task(claim_id: int, title: str, content: str):
             # Update the record with the analysis results
             claim_to_update.similarity_score = score
             claim_to_update.summary = summary
+            claim_to_update.nli_label = nli_result["label"]
+            claim_to_update.contradiction_score = nli_result["contradiction_score"]
             db.commit()
             return f"Successfully analyzed claim {claim_id}. Score: {score}"
         else:

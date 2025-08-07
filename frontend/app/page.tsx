@@ -2,7 +2,6 @@ import ClaimCard from "@/components/ClaimCard";
 import { fetchClaims, Claim } from "@/lib/api";
 
 export default async function Home() {
-  // 1. Fetch live data from the API instead of using mock data
   const claims = await fetchClaims();
 
   return (
@@ -12,19 +11,19 @@ export default async function Home() {
       </h1>
 
       <div className="w-full max-w-4xl">
-        {/* 2. Check if there are claims to display */}
         {claims.length > 0 ? (
           claims.map((claim: Claim) => (
             <ClaimCard
               key={claim.id}
               title={claim.title}
-              source={claim.source_name} // 3. Use the correct property name from the API
+              source={claim.source_name}
               score={claim.similarity_score}
               publishedAt={claim.published_at}
+              summary={claim.summary}
+              nli_label={claim.nli_label}
             />
           ))
         ) : (
-          // 4. Show a message if no data is returned
           <p className="text-slate-400 text-center">
             No claims found. Try ingesting some data from the backend!
           </p>

@@ -14,3 +14,5 @@ class Claim(Base):
     published_at = Column(DateTime)
     similarity_score = Column(Float, nullable=True)
     summary = Column(Text, nullable=True)
+    nli_label = Column(String, nullable=True) # <-- ADD THIS LINE
+    contradiction_score = Column(Float, nullable=True)

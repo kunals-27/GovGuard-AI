@@ -5,6 +5,9 @@ export type Claim = {
   source_name: string;
   similarity_score: number | null;
   published_at: string;
+  summary: string | null;
+  nli_label: string | null; // <-- ADD THIS
+  contradiction_score: number | null;
 };
 
 export async function fetchClaims(): Promise<Claim[]> {

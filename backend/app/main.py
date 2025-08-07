@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import requests
 import os
@@ -10,6 +11,18 @@ from .db import models, session
 models.Base.metadata.create_all(bind=session.engine)
 
 app = FastAPI(title="GovGuardAI API")
+
+origins = [
+    "http://localhost:3000",  # The address of your frontend app
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
@@ -51,3 +64,11 @@ def ingest_data(db: Session = Depends(session.get_db)):
 
     except requests.exceptions.RequestException as e:
         return {"error": f"Failed to fetch data from GNews: {e}"}
+    
+@app.get("/claims/")
+def get_claims(db: Session = Depends(session.get_db)):
+    """
+    Retrieves the 20 most recent claims from the database.
+    """
+    claims = db.query(models.Claim).order_by(models.Claim.published_at.desc()).limit(20).all()
+    return claims
