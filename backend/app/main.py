@@ -15,7 +15,8 @@ models.Base.metadata.create_all(bind=session.engine)
 app = FastAPI(title="GovGuardAI API")
 
 origins = [
-    "http://localhost:3000",  # The address of your frontend app
+    "http://localhost:3000",
+    "http://localhost:5173",# The address of your frontend app
 ]
 
 app.add_middleware(

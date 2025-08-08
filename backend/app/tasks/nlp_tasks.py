@@ -11,8 +11,6 @@ def analyze_claim_task(claim_id: int, title: str, content: str):
     db = SessionLocal()
     try:
         summary = analysis.generate_summary(content)
-
-        # This now returns a list of (fact, distance) tuples
         similar_facts_with_distance = analysis.find_similar_fact_checks(title, db)
 
         top_label = "neutral"
@@ -20,10 +18,14 @@ def analyze_claim_task(claim_id: int, title: str, content: str):
         similarity_score = 0.0
 
         if similar_facts_with_distance:
-            # Get the top match and its distance
             most_similar_fact, distance = similar_facts_with_distance[0]
 
-            # Run NLI on the most similar fact
+            # ADDED: A safety check to prevent the TypeError
+            if distance is not None:
+                # Cosine distance is 0 for identical, 2 for opposite.
+                # 1 - distance maps this to a nice -1 to 1 similarity score.
+                similarity_score = 1 - distance
+
             nli_result = analysis.detect_contradiction(
                 premise=most_similar_fact.statement,
                 hypothesis=title
@@ -31,14 +33,9 @@ def analyze_claim_task(claim_id: int, title: str, content: str):
             top_label = nli_result["label"]
             top_contradiction_score = nli_result["contradiction_score"]
 
-            # Convert distance to similarity score (0 distance = 1.0 similarity)
-            similarity_score = 1 - distance
-
-        # Find the original claim in the DB to update it
         claim_to_update = db.query(models.Claim).filter(models.Claim.id == claim_id).first()
 
         if claim_to_update:
-            # Update the record with all analysis results
             claim_to_update.summary = summary
             claim_to_update.nli_label = top_label
             claim_to_update.contradiction_score = top_contradiction_score

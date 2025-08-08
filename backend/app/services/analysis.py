@@ -54,17 +54,16 @@ def detect_contradiction(premise: str, hypothesis: str) -> dict:
     
 def find_similar_fact_checks(query_text: str, db: Session, limit: int = 3) -> list:
     """
-    Finds the most similar fact-checks and their distances in the database.
+    Finds the most similar fact-checks and their cosine distances.
     """
     query_embedding = similarity_model.encode(query_text)
 
-    # This query now selects both the FactCheck object AND the distance
+    # UPDATED to use cosine_distance, which is better for similarity
     results = db.query(
         models.FactCheck,
-        models.FactCheck.embedding.l2_distance(query_embedding).label('distance')
+        models.FactCheck.embedding.cosine_distance(query_embedding).label('distance')
     ).order_by(
-        text('distance') # Order by the calculated distance
+        text('distance')
     ).limit(limit).all()
 
-    # The result is a list of tuples: (FactCheck_object, distance_value)
     return results

@@ -10,6 +10,8 @@ export type Claim = {
   summary: string | null;
   nli_label: string | null;
   contradiction_score: number | null;
+  topic: string | null; // <-- ADD THIS LINE
+  sentiment: string | null; // <-- ADD THIS LINE
 };
 
 export type TrendData = {
