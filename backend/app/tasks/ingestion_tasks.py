@@ -1,4 +1,4 @@
-# in backend/app/tasks/ingestion_tasks.py
+import random # <-- ADD THIS IMPORT
 from celery_worker import celery_app
 from app.db.session import SessionLocal
 from app.db import models
@@ -7,17 +7,25 @@ import requests
 import os
 from datetime import datetime
 
+# A list of topics to cycle through
+SEARCH_TOPICS = ["government", "politics", "international relations", "economic policy", "healthcare reform", "technology regulation"]
+
 @celery_app.task
 def fetch_and_store_articles_task():
     """
-    A scheduled task to fetch new articles from GNews, store them,
-    and trigger analysis tasks.
+    A scheduled task to fetch new articles on a random topic.
     """
+    # Choose a random topic from our list for each run
+    topic = random.choice(SEARCH_TOPICS)
+    print(f"Fetching articles for topic: {topic}")
+
     api_key = os.getenv("GNEWS_API_KEY")
-    url = f"https://gnews.io/api/v4/search?q=government&lang=en&max=10&apikey={api_key}"
+    # Update the URL to use the random topic
+    url = f"https://gnews.io/api/v4/search?q=\"{topic}\"&lang=en&max=10&apikey={api_key}"
     db = SessionLocal()
 
     try:
+        # ... (the rest of the function is exactly the same)
         response = requests.get(url)
         response.raise_for_status()
         articles = response.json().get("articles", [])
@@ -42,7 +50,7 @@ def fetch_and_store_articles_task():
         for claim in new_claims_to_analyze:
             analyze_claim_task.delay(claim.id, claim.title, claim.content)
 
-        return f"Ingestion task complete. Found and stored {len(new_claims_to_analyze)} new articles."
+        return f"Ingestion task for topic '{topic}' complete. Found and stored {len(new_claims_to_analyze)} new articles."
 
     except Exception as e:
         db.rollback()

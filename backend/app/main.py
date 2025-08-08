@@ -7,6 +7,8 @@ from datetime import datetime
 
 from .tasks.nlp_tasks import analyze_claim_task 
 from .db import models, session
+from sqlalchemy import func, cast, Date
+from datetime import date, timedelta
 
 models.Base.metadata.create_all(bind=session.engine)
 
@@ -72,3 +74,27 @@ def get_claims(db: Session = Depends(session.get_db)):
     """
     claims = db.query(models.Claim).order_by(models.Claim.published_at.desc()).limit(20).all()
     return claims
+
+@app.get("/dashboard/trends")
+def get_trends_data(db: Session = Depends(session.get_db)):
+    """
+    Provides data for the contradictions trend chart for the last 7 days.
+    """
+    seven_days_ago = date.today() - timedelta(days=7)
+
+    # This query counts the number of contradictions for each day
+    results = db.query(
+        cast(models.Claim.published_at, Date).label("date"),
+        func.count(models.Claim.id).label("count")
+    ).filter(
+        models.Claim.nli_label == 'contradiction',
+        cast(models.Claim.published_at, Date) >= seven_days_ago
+    ).group_by(
+        cast(models.Claim.published_at, Date)
+    ).order_by(
+        cast(models.Claim.published_at, Date)
+    ).all()
+
+    # Format the data for the charting library
+    chart_data = [{"date": str(row.date), "count": row.count} for row in results]
+    return chart_data
