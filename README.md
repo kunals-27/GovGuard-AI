@@ -196,16 +196,16 @@ Key dependencies: `react`, `react-router-dom@^7`, `swr`, `tailwindcss`, `framer-
 
 ## Roadmap
 
-- **Topics Classification (Planned)**
+- **Topics Classification **
   - Topic modeling and LLM-assisted categorization per claim.
   - Topic filters and topic distribution charts.
 
-- **Bias Detection (Planned)**
+- **Bias Detection **
   - Classify source or article bias (e.g., left/center/right, partisan tilt).
   - Source-level bias aggregation and visualization.
   - Confidence calibration and human-in-the-loop review.
 
-- **Sentiment Analysis (Planned)**
+- **Sentiment Analysis **
   - Per-article and per-topic sentiment scores.
   - Sentiment-over-time graphs and alerting on unusual spikes.
 
